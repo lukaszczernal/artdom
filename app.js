@@ -1,7 +1,6 @@
 
-/**
- * Module dependencies.
- */
+
+// MODULE DEPENDENCIES
 
 var express = require('express'),
     webRoutes = require('./routes/web'),
@@ -14,10 +13,37 @@ var express = require('express'),
     methodOverride = require('method-override'),
     errorHandler = require('errorhandler');
 
+    
+// DATABASE DEPENDENCIES
+
+var configDB  = require('./config/database.js'),
+    mongo     = require('mongodb'),
+    mongoose  = require('mongoose');
+
+    mongoose.connect(configDB.url);
+
+var db = mongoose.connection;
+    db.on('error', console.error);
+    db.once('open', function() {
+      console.log('db: connected');
+    });
+
+// DATABASE SETUP
+
+var hashSchema = mongoose.Schema({
+  hash: String
+});
+
+var Hash = mongoose.model('hash', hashSchema);
+
+// APP START
+
 var app = express();
 var env = process.env.NODE_ENV || 'development';
 
-// all environments
+
+// ALL ENVIRONMENTS
+
 app.set('port', process.env.PORT || 3000);
 app.set('views', __dirname + '/views');
 app.set('view engine', 'jade');
@@ -27,25 +53,27 @@ app.use(bodyParser());
 app.use(methodOverride());
 app.use(require('stylus').middleware(__dirname + '/public'));
 app.use(express.static(path.join(__dirname, 'public')));
-
-// development only
-if (env == 'development') app.use(errorHandler());
-
-
 app.use(function(req, res, next){
-  console.log('middleware');
+  req.db = db;
   next();
 });
 
-// ROUTES //
+if (env == 'development') app.use(errorHandler());
 
-// app.get('/users', user.list);  //TEST
+// ROUTES //
 
 var webRouter = express.Router();
     webRouter
+      .param('hash', function(req, res, next, urlHash){
+        Hash.findOne({hash: urlHash}, function (err, hashDoc) {
+          req.isValidHash = (!!err || !!hashDoc)? true : false;
+          next();
+        });
+      })
       .get('/', webRoutes.index)
       .get('/kontakt', webRoutes.contact)
-      .get('/katalog', webRoutes.catalog);
+      .get('/katalog', webRoutes.catalog)
+      .get('/katalog/:hash', webRoutes.catalog);
 
 var apiRouter = express.Router();
     apiRouter

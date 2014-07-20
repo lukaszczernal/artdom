@@ -12,5 +12,11 @@ exports.contact = function(req, res){
 };
 
 exports.catalog = function(req, res){
-  res.render('catalog', { title: 'Katalog' });
+  if (req.isValidHash) {
+    res.render('catalog', { title: 'Katalog' });
+    return
+  }
+
+  res.render('catalog', { title: 'Brak dostępu do katalogu' });
+  
 };
