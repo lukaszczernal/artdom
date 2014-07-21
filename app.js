@@ -16,9 +16,10 @@ var express = require('express'),
     
 // DATABASE DEPENDENCIES
 
-var configDB  = require('./config/database.js'),
-    mongo     = require('mongodb'),
-    mongoose  = require('mongoose');
+var configDB    = require('./config/database.js'),
+    populateDB  = require('./data/initData.js'),
+    mongo       = require('mongodb'),
+    mongoose    = require('mongoose');
 
     mongoose.connect(configDB.url);
 
@@ -73,7 +74,10 @@ var webRouter = express.Router();
       .get('/', webRoutes.index)
       .get('/kontakt', webRoutes.contact)
       .get('/katalog', webRoutes.catalog)
-      .get('/katalog/:hash', webRoutes.catalog);
+      .get('/katalog/:hash', webRoutes.catalog)
+      .get('/populate-db', function(req, res) {
+        populateDB.hashes(arguments);
+      });
 
 var apiRouter = express.Router();
     apiRouter
